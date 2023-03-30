@@ -51,6 +51,7 @@ static const Layout layouts[] = {
 	{ "[\\]",     dwindle }, /* 4 */
 	{ "TTT",      bstack },  /* 5 */
 	{ "===",      bstackhoriz }, /* 6 */
+	{ "###",      gaplessgrid }, /* 7 */
 };
 
 /* monitors */
@@ -189,6 +190,7 @@ static const Key keys[] = {
 	{ MODKEY|WLR_MODIFIER_SHIFT, Key_s,       setlayout,      {.v = &layouts[4]} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, Key_t,       setlayout,      {.v = &layouts[5]} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, Key_u,       setlayout,      {.v = &layouts[6]} },
+	{ MODKEY,                    Key_g,       setlayout,      {.v = &layouts[7]} },
 	// { MODKEY,                    Key_space,   setlayout,      {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, Key_f,       togglefloating, {0} },
 	{ MODKEY,                    Key_f,       togglefullscreen, {0} },

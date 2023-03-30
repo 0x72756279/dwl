@@ -370,6 +370,7 @@ static struct wlr_scene_node *xytonode(double x, double y, struct wlr_surface **
 static void zoom(const Arg *arg);
 static void bstack(Monitor *m);
 static void bstackhoriz(Monitor *m);
+static void gaplessgrid(Monitor *m);
 
 /* variables */
 static const char broken[] = "broken";
@@ -1724,6 +1725,56 @@ hidecursor(int hide)
 	wlr_xcursor_manager_set_cursor_image(cursor_mgr, "left_ptr", cursor);
 	cursor_hidden = false;
 	motionnotify(0);
+}
+
+void
+gaplessgrid(Monitor *m)
+{
+	unsigned int n = 0, i = 0, ch, cw, cn, rn, rows, cols, draw_borders = 1;
+    int oh, ov, ih, iv;
+	Client *c;
+
+    getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+	if (n == 0)
+		return;
+
+    if (n == smartborders) {
+        draw_borders = 0;
+    }
+
+	/* grid dimensions */
+	for (cols = 0; cols <= (n / 2); cols++)
+		if ((cols * cols) >= n)
+			break;
+
+	if (n == 5) /* set layout against the general calculation: not 1:2:2, but 2:3 */
+		cols = 2;
+	rows = n / cols;
+
+	/* window geometries */
+	cw = (m->w.width - 2 * ov -iv * (cols - 1)) / (cols ? cols : 1);
+	cn = 0; /* current column number */
+	rn = 0; /* current row number */
+	wl_list_for_each(c, &clients, link) {
+		unsigned int cx, cy;
+		if (!VISIBLEON(c, m) || c->isfloating || c->isfullscreen)
+			continue;
+
+		if ((i / rows + 1) > (cols - n % cols))
+			rows = n / cols + 1;
+		ch = (m->w.height - 2 * oh - ih * (rows - 1)) / (rows ? rows : 1);
+		cx = m->w.x + cn * (cw + iv) + ov;
+		cy = m->w.y + rn * (ch + ih) + oh;
+		resize(c, (struct wlr_box){.x = cx, .y = cy,
+                .width = cw - 2 * c->bw, .height = ch - 2 * c->bw}, 0, draw_borders);
+		rn++;
+		if (rn >= rows) {
+			rn = 0;
+			cn++;
+		}
+		i++;
+	}
 }
 
 void
