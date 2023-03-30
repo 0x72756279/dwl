@@ -42,7 +42,7 @@ dwl-bar-ipc-unstable-v1-protocol.c:
 config.h:
 	cp config.def.h $@
 clean:
-	rm -f dwl *.o *-protocol.*
+	rm -f dwl *.o *-protocol.* *.orig *.rej
 
 dist: clean
 	mkdir -p dwl-$(VERSION)
