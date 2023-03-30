@@ -16,6 +16,19 @@ static const float fullscreen_bg[]         = {0.1, 0.1, 0.1, 1.0};
 
 static const int hide_type = 1;
 
+/* Autostart */
+static const char *const autostart[] = {
+        "waybar", NULL,
+        "idledaemon", NULL,
+        "dunst", NULL,
+        "setbg", NULL,
+        "kanshi", NULL,
+        "blueman-applet", NULL,
+        "wl-paste", "-w", "clipmgr", "-i", NULL,
+        "nm-applet", " --indicator", NULL,
+        NULL /* terminate */
+};
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
