@@ -72,6 +72,8 @@
 #define END(A)                  ((A) + LENGTH(A))
 #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
 #define LISTEN(E, L, H)         wl_signal_add((E), ((L)->notify = (H), (L)))
+#define WIDTH(X)                ((X)->geom.width + 2 * (X)->bw)
+#define HEIGHT(X)               ((X)->geom.height + 2 * (X)->bw)
 #define IDLE_NOTIFY_ACTIVITY    wlr_idle_notify_activity(idle, seat), wlr_idle_notifier_v1_notify_activity(idle_notifier, seat)
 
 /* enums */
@@ -366,6 +368,8 @@ static Monitor *xytomon(double x, double y);
 static struct wlr_scene_node *xytonode(double x, double y, struct wlr_surface **psurface,
 		Client **pc, LayerSurface **pl, double *nx, double *ny);
 static void zoom(const Arg *arg);
+static void bstack(Monitor *m);
+static void bstackhoriz(Monitor *m);
 
 /* variables */
 static const char broken[] = "broken";
@@ -481,9 +485,9 @@ void getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc) {
     unsigned int n = 0, oe = enablegaps, ie = enablegaps;
     Client *c;
 
-    wl_list_for_each(c, &clients, link);
-    if (VISIBLEON(c, m) && !c->isfloating)
-        n++;
+    wl_list_for_each(c, &clients, link)
+        if (VISIBLEON(c, m) && !c->isfloating)
+            n++;
 
     if (smartgaps && n == 1) {
         oe = 0;
@@ -2974,9 +2978,6 @@ void fibonacci(Monitor *m, int s) {
 
     getgaps(m, &oh, &ov, &ih, &iv, &n);
 
-	wl_list_for_each(c, &clients, link)
-		if (VISIBLEON(c, m) && !c->isfloating)
-			n++;
 	if(n == 0)
 		return;
 
@@ -3551,4 +3552,108 @@ main(int argc, char *argv[])
 
 usage:
 	die("Usage: %s [-v] [-s startup command]", argv[0]);
+}
+
+static void
+bstack(Monitor *m)
+{
+	unsigned int i, n, draw_borders = 1;
+	int mx = 0, my = 0, mh = 0, mw = 0;
+    int sx = 0, sy = 0, sh = 0, sw = 0;
+    int oh, ov, ih, iv;
+	Client *c;
+
+    getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+    if (n == 0) {
+        return;
+    }
+
+    if (n == smartborders) {
+        draw_borders = 0;
+    }
+
+    sx = mx = m->w.x + ov;
+    sy = my = m->w.y + oh;
+    sh = mh = m->w.height - 2 * oh;
+    sw = mw = m->w.width - 2 * ov - iv * (MIN(n, m->nmaster) - 1);
+
+    if (m->nmaster && n > m->nmaster) {
+        sh = (mh - ih) * (1 - m->mfact);
+        mh = (mh - ih) * m->mfact;
+        sy = my + mh + ih;
+        sw = m->w.width - 2 * ov - iv * (n - m->nmaster - 1);
+    }
+
+    i = 0;
+	wl_list_for_each(c, &clients, link) {
+		if (!VISIBLEON(c, m) || c->isfloating)
+			continue;
+
+        if (i < m->nmaster) {
+            resize(c, (struct wlr_box){.x = mx, .y = my,
+                       .width = mw / MIN(n, m->nmaster) - (2 * c->bw),
+                       .height = mh - (2 * c->bw)}, 0, draw_borders);
+            mx += WIDTH(c) + iv;
+        } else {
+            resize(c, (struct wlr_box){.x = sx, .y = sy,
+                       .width = sw / (n - MIN(n, m->nmaster)) - (2 * c->bw),
+                       .height = sh - (2 * c->bw) }, 0, draw_borders);
+            sx += WIDTH(c) + iv;
+
+        }
+        i++;
+    }
+}
+
+static void
+bstackhoriz(Monitor *m) {
+	unsigned int i, n, draw_borders = 1;
+	int mx = 0, my = 0, mh = 0, mw = 0;
+    int sx = 0, sy = 0, sh = 0, sw = 0;
+    int oh, ov, ih, iv;
+	Client *c;
+
+    getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+    if (n == 0) {
+        return;
+    }
+
+    if (n == smartborders) {
+        draw_borders = 0;
+    }
+
+    sx = mx = m->w.x + ov;
+    sy = my = m->w.y + oh;
+    mh = m->w.height - 2 * oh;
+    sh = m->w.height - 2 * oh - ih * (n - m->nmaster -1);
+    mw = m->w.width - 2 * ov - iv * (MIN(n, m->nmaster) - 1);
+    sw = m->w.width - 2 * ov;
+
+	if (m->nmaster && n > m->nmaster) {
+        sh = (mh - ih) * (1 - m->mfact);
+        mh = mh - ih - sh;
+        sy = my + mh + ih;
+        sh = m->w.height - mh - 2 * oh - ih * (n - m->nmaster);
+    }
+
+    i = 0;
+	wl_list_for_each(c, &clients, link) {
+		if (!VISIBLEON(c, m) || c->isfloating)
+			continue;
+
+        if (i < m->nmaster) {
+            resize(c, (struct wlr_box){.x = mx, .y = my,
+                       .width = mw / MIN(n, m->nmaster) - (2 * c->bw),
+                       .height = mh - (2 * c->bw) }, 0, draw_borders);
+            mx += WIDTH(c) + iv;
+        } else {
+            resize(c, (struct wlr_box){.x = sx, .y = sy,
+                       .width = sw - (2 * c->bw),
+                       .height = sh / (n - MIN(n, m->nmaster)) - (2 * c->bw) }, 0, draw_borders);
+            sy += HEIGHT(c) + ih;
+        }
+        i++;
+    }
 }

@@ -1,4 +1,3 @@
-#include "fibonacci.c"
 /* appearance */
 static const int sloppyfocus               = 1;  /* focus follows mouse */
 static const int bypass_surface_visibility = 0;  /* 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible  */
@@ -45,11 +44,13 @@ static const Rule rules[] = {
 /* layout(s) */
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{ "[]=",      tile },
-	{ "><>",      NULL },    /* no layout function means floating behavior */
-	{ "[M]",      monocle },
-	{ "[@]",      spiral },
-	{ "[\\]",     dwindle },
+	{ "[]=",      tile }, /* 0 */
+	{ "><>",      NULL },    /* 1 no layout function means floating behavior */
+	{ "[M]",      monocle }, /* 2 */
+	{ "[@]",      spiral },  /* 3 */
+	{ "[\\]",     dwindle }, /* 4 */
+	{ "TTT",      bstack },  /* 5 */
+	{ "===",      bstackhoriz }, /* 6 */
 };
 
 /* monitors */
@@ -186,6 +187,8 @@ static const Key keys[] = {
 	{ MODKEY,                    Key_u,       setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                    Key_s,       setlayout,      {.v = &layouts[3]} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, Key_s,       setlayout,      {.v = &layouts[4]} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, Key_t,       setlayout,      {.v = &layouts[5]} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, Key_u,       setlayout,      {.v = &layouts[6]} },
 	// { MODKEY,                    Key_space,   setlayout,      {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, Key_f,       togglefloating, {0} },
 	{ MODKEY,                    Key_f,       togglefullscreen, {0} },
