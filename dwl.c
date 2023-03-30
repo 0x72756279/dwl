@@ -345,6 +345,8 @@ static void startdrag(struct wl_listener *listener, void *data);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static void dwindle(Monitor *m);
+static void spiral(Monitor *m);
 static void togglefloating(const Arg *arg);
 static void togglefullscreen(const Arg *arg);
 static void togglescratch(const Arg *arg);
@@ -474,6 +476,25 @@ struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
 
 static pid_t *autostart_pids;
 static size_t autostart_len;
+
+void getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc) {
+    unsigned int n = 0, oe = enablegaps, ie = enablegaps;
+    Client *c;
+
+    wl_list_for_each(c, &clients, link);
+    if (VISIBLEON(c, m) && !c->isfloating)
+        n++;
+
+    if (smartgaps && n == 1) {
+        oe = 0;
+    }
+
+    *oh = m->gappoh * oe;
+    *ov = m->gappov * oe;
+    *ih = m->gappih * ie;
+    *iv = m->gappov * ie;
+    *nc = n;
+}
 
 /* function implementations */
 void
@@ -2944,6 +2965,83 @@ tile(Monitor *m)
 		}
 		i++;
 	}
+}
+
+void fibonacci(Monitor *m, int s) {
+	unsigned int i=0, n, nx, ny, nw, nh, draw_borders = 1;
+    int oh, ov, ih, iv;
+	Client *c;
+
+    getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+	wl_list_for_each(c, &clients, link)
+		if (VISIBLEON(c, m) && !c->isfloating)
+			n++;
+	if(n == 0)
+		return;
+
+    if (n == smartborders) {
+        draw_borders = 0;
+    }
+
+	nx = m->w.x + ov;
+	ny = oh;
+	nw = m->w.width -2 *ov;
+	nh = m->w.height -2 *oh;
+
+	wl_list_for_each(c, &clients, link)
+		if (VISIBLEON(c, m) && !c->isfloating){
+		if((i % 2 && nh / 2 > 2 * c->bw)
+		   || (!(i % 2) && nw / 2 > 2 * c->bw)) {
+			if(i < n - 1) {
+				if(i % 2)
+					nh = (nh - ih) / 2;
+				else
+					nw = (nw - iv) / 2;
+				if((i % 4) == 2 && !s)
+					nx += nw + iv;
+				else if((i % 4) == 3 && !s)
+					ny += nh + ih;
+			}
+			if((i % 4) == 0) {
+				if(s)
+					ny += nh + ih;
+				else
+					ny -= nh + ih;
+			}
+			else if((i % 4) == 1)
+				nx += nw + iv;
+			else if((i % 4) == 2)
+				ny += nh + ih;
+			else if((i % 4) == 3) {
+				if(s)
+					nx += nw + iv;
+				else
+					nx -= nw + iv;
+			}
+			if(i == 0)
+			{
+				if(n != 1)
+					nw = (m->w.width - 2 * ov - iv) * m->mfact;
+				ny = m->w.y + oh;
+			}
+			else if(i == 1)
+				nw = m->w.width - nw - iv -2 * ov;
+			i++;
+		}
+		resize(c, (struct wlr_box){.x = nx, .y = ny,
+			.width = nw - (2 * c->bw), .height = nh - (2 * c->bw)}, 0, draw_borders);
+	}
+}
+
+void
+dwindle(Monitor *mon) {
+	fibonacci(mon, 1);
+}
+
+void
+spiral(Monitor *mon) {
+	fibonacci(mon, 0);
 }
 
 void

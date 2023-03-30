@@ -1,3 +1,4 @@
+#include "fibonacci.c"
 /* appearance */
 static const int sloppyfocus               = 1;  /* focus follows mouse */
 static const int bypass_surface_visibility = 0;  /* 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible  */
@@ -47,6 +48,8 @@ static const Layout layouts[] = {
 	{ "[]=",      tile },
 	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
+	{ "[@]",      spiral },
+	{ "[\\]",     dwindle },
 };
 
 /* monitors */
@@ -181,6 +184,8 @@ static const Key keys[] = {
 	{ MODKEY,                    Key_t,       setlayout,      {.v = &layouts[0]} },
 	// { MODKEY,                    Key_f,       setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                    Key_u,       setlayout,      {.v = &layouts[2]} },
+	{ MODKEY,                    Key_s,       setlayout,      {.v = &layouts[3]} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, Key_s,       setlayout,      {.v = &layouts[4]} },
 	// { MODKEY,                    Key_space,   setlayout,      {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, Key_f,       togglefloating, {0} },
 	{ MODKEY,                    Key_f,       togglefullscreen, {0} },
